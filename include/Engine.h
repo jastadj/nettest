@@ -11,6 +11,12 @@
 #define PORT 4567
 #define IPADDRESS 127.0.0.1
 
+struct netmsg
+{
+    int type;
+    std::string msg;
+};
+
 class Engine
 {
 private:
@@ -20,6 +26,10 @@ private:
     //mainloop
     void mainLoop();
 
+    //threads
+    sf::Thread *serverListenThread;
+    void ServerListen();
+
     //socket
     sf::UdpSocket socket;
     sf::IpAddress ipaddress;
@@ -28,8 +38,6 @@ private:
 public:
     Engine(int nmode);
     ~Engine();
-
-
 
     void start();
 };
