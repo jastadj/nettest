@@ -1,115 +1,105 @@
-#include "Engine.h"
+#include "engine.hpp"
+#include <iostream>
+#include <string>
 
-    sf::Packet& operator <<(sf::Packet& packet, const netmsg& m)
-    {
-    return packet << m.type << m.msg;
-    }
-    sf::Packet& operator >>(sf::Packet& packet, netmsg& m)
-    {
-    return packet >> m.type >> m.msg;
-    }
-
-Engine::Engine(int nmode)
+Engine::Engine()
 {
-    //ctor
-    runMode = nmode;
+    //init curses
+    initCurses();
 
+    //get client or host mode
+    switch(getMode())
+    {
+    case 0:
+        initHost();
+        break;
+    case 1:
+        break;
+    }
 
 }
 
 Engine::~Engine()
 {
-    //dtor
-}
 
-void Engine::start()
-{
-    mainLoop();
 
 }
 
-void Engine::ServerListen()
+bool Engine::initCurses()
 {
-       bool quit = false;
+    //init screen
+    initscr();
+    //allow extra keys
+    keypad(stdscr, true);
+    //no echo
+    noecho();
 
-        //bind socket
-        socket.bind(PORT);
-        socket.setBlocking(false);
-        std::cout << "Listening on " << PORT << std::endl;
-
-        while(!quit)
-        {
-            sf::Packet ReceivedPkt;
-            sf::IpAddress SenderIP;
-            unsigned short SenderPort;
-            netmsg msg;
-
-            if(!socket.receive(ReceivedPkt, SenderIP, SenderPort))
-            {
-                ReceivedPkt >> msg;
-                if(msg.type == 1) std::cout << "Client requesting acknowledge...\n";
-            }
-        }
+    return true;
 }
-void Engine::mainLoop()
+
+int Engine::getMode()
 {
+    int ch = 0;
+    int selection = 0;
+    std::vector<std::string> modes;
     bool quit = false;
 
-    if(runMode == MODE_SERVER)
+    //disable cursors
+    curs_set(0);
+
+    modes.push_back("Host");
+    modes.push_back("Client");
+
+    while(!quit)
     {
-
-        //start server listen thread
-        serverListenThread = new sf::Thread(&Engine::ServerListen, this);
-        serverListenThread->launch();
-
-        //start console
-        while(!quit)
+        clear();
+        printw("Enter mode:\n");
+        for(int i = 0; i < int(modes.size()); i++)
         {
-            std::string buf;
-            std::cout << "SERVER>";
-            std::getline(std::cin, buf);
 
+            printw("   %d. ", i+1);
+            if(selection == i) attron(A_REVERSE);
+            printw("%s\n", modes[i].c_str());
+            attroff(A_REVERSE);
         }
+        //printw("%d\n", ch);
+
+        ch = getch();
+
+        //user pressed escape
+        if(ch == 27) return -1;
+        //user pressed up arrow
+        else if(ch == 259)
+        {
+            selection--;
+            if(selection < 0) selection = 0;
+        }
+        //user pressed down arrow
+        else if(ch == 258)
+        {
+            selection++;
+            if(selection >= int(modes.size())) selection = modes.size()-1;
+        }
+        //user pressed return
+        else if(ch == 10)
+        {
+            return selection;
+        }
+
     }
-    else if(runMode == MODE_CLIENT)
-    {
-        std::string username;
-        std::cout << "Enter name:";
-        std::getline(std::cin, username);
-
-        //send request to server
-        sf::Packet req;
-        netmsg reqmsg;
-        reqmsg.type = 1;
-        req << reqmsg;
-        socket.send(req, "127.0.0.1", PORT);
-        std::cout << "Request sent to server...\n";
-
-        //wait for a response
-        socket.bind(PORT);
-        sf::Packet pktReqAck;
-        sf::IpAddress SenderIP;
-        unsigned short SenderPort;
-        netmsg reqackmsg;
-
-        if(!socket.receive(pktReqAck, SenderIP, SenderPort))
-        {
-            ReceivedPkt >> reqackmsg;
-            std::cout << "Request acknowledged\n";
-        }
 
 
-        while(!quit)
-        {
-            std::string inputbuf;
-            std::cout << "CLIENT>";
-            std::getline(std::cin, inputbuf);
+}
 
-            if(inputbuf == "quit") quit = true;
+bool Engine::initHost()
+{
+    curs_set(1);
+    echo();
+    hostip = sf::IpAddress::getLocalAddress();
 
-            sf::Packet ToSend;
-            ToSend << inputbuf;
-            socket.send(ToSend, "127.0.0.1", PORT);
-        }
-    }
+    clear();
+    printw("Local IP: %s\n\n", hostip.toString().c_str());
+    printw("Enter server port:");
+    scanw("%hh", hostport);
+
 }

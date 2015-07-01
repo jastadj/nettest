@@ -32,15 +32,21 @@
 			<Add option="-Wall" />
 			<Add directory="../../SFML-2.2/include" />
 			<Add directory="include" />
-			<Add directory="src" />
 		</Compiler>
 		<Linker>
+			<Add option="-static-libgcc" />
 			<Add library="sfml-network" />
 			<Add library="sfml-system" />
+			<Add library="lib\pdcurses.a" />
 			<Add directory="../../SFML-2.2/lib" />
+			<Add directory="lib" />
 		</Linker>
-		<Unit filename="include/Engine.h" />
-		<Unit filename="src/Engine.cpp" />
+		<Unit filename="include/curses.h" />
+		<Unit filename="include/curspriv.h" />
+		<Unit filename="include/engine.hpp" />
+		<Unit filename="include/panel.h" />
+		<Unit filename="include/term.h" />
+		<Unit filename="src/engine.cpp" />
 		<Unit filename="src/main.cpp" />
 		<Extensions>
 			<code_completion />
