@@ -14,8 +14,14 @@ private:
 
     //host
     bool initHost();
-    short int hostport;
+    void hostListen();
+    unsigned short hostport;
     sf::IpAddress hostip;
+
+    //client
+    bool initClient();
+    void clientLoop();
+    unsigned short localport;
 
 
 public:
